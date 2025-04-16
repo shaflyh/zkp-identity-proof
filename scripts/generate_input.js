@@ -4,7 +4,7 @@ const poseidon = require("circomlibjs").buildPoseidon;
 const { toHex } = require("circomlibjs");
 
 // Sample identity values (replace with real user input)
-const nik = 1234567890123456n;
+const nik = 3204280701000002n;
 const namaHashed = 987654321n; // Assume name has been hashed or represented numerically
 const ttl = 20000101n;         // Format: YYYYMMDD as number
 

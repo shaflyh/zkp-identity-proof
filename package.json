@@ -5,7 +5,7 @@
   "scripts": {
     "zkp:setup": "node scripts/setup.js",
     "zkp:input": "node scripts/generate_input.js",
-    "zkp:generate": "node scripts/generate_proof.js",
+    "zkp:proof": "node scripts/generate_proof.js",
     "zkp:verify": "node scripts/verify_proof.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
