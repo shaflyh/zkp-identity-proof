@@ -1,10 +1,26 @@
-node_modules
-circomlib
-# Ignore build outputs
+# Build artifacts
 build/
 contracts/
-*.zkey
+
+# Compiled circuit outputs
 *.r1cs
 *.wasm
+*.zkey
 *.sym
+*.wtns
+
+# ZKP related proofs
+proof.json
+public.json
+witness.wtns
 verification_key.json
+
+# Input (optional, jika data sensitif)
+input.json
+
+# Node dependencies
+node_modules/
+
+# OS junk
+.DS_Store
+Thumbs.db
