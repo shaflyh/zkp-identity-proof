@@ -7,10 +7,6 @@
     "zkp:input": "node scripts/generate_input.js",
     "zkp:generate": "node scripts/generate_proof.js",
     "zkp:verify": "node scripts/verify_proof.js",
-    "prove": "node prove.js",
-    "verify": "node verify.js",
-    "build": "npm run setup",
-    "rebuild": "rm -rf build && npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
