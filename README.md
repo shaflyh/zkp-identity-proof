@@ -32,7 +32,7 @@ input.json                // Input data pengguna (NIK, nama, TTL)
 "scripts": {
   "zkp:setup": "node scripts/setup.js",
   "zkp:input": "node scripts/generate_input.js",
-  "zkp:generate": "node scripts/generate_proof.js",
+  "zkp:proof": "node scripts/generate_proof.js",
   "zkp:verify": "node scripts/verify_proof.js"
 }
 ```
@@ -41,7 +41,7 @@ input.json                // Input data pengguna (NIK, nama, TTL)
 |--------|--------|
 | `zkp:setup` | Kompilasi circuit dan setup Groth16 trusted key |
 | `zkp:input` | Membuat file input.json (berisi data identitas + hash) |
-| `zkp:generate` | Menghasilkan witness & proof dari input |
+| `zkp:proof` | Menghasilkan witness & proof dari input |
 | `zkp:verify` | Memverifikasi proof menggunakan verification key |
 
 ---
@@ -81,3 +81,87 @@ npm run zkp:verify
 
 ---
 
+
+# 🧾 Smart Contract — IdentityZKP (Zero Knowledge Proof untuk Identitas)
+---
+
+## ⚙️ Persiapan Environment
+
+1. Ganti nama file `.env.example` menjadi `.env`, dan isi dengan variabel berikut:
+
+```
+PRIVATE_KEY=0x...
+POLYGON_AMOY_RPC=https://polygon-amoy.infura.io/v3/your_project_id
+POLYGONSCAN_API_KEY=your_polygonscan_api_key
+```
+📎 Dapatkan API Key Polygon di: [https://polygonscan.com/](https://polygonscan.com/)
+
+---
+
+## 🔎 Verifikasi Lokal Proof
+
+Sebelum mengirimkan proof ke smart contract, kamu dapat memverifikasi ZKP dengan snarkjs:
+
+```bash
+snarkjs groth16 verify build/verification_key.json build/public.json build/proof.json
+```
+
+---
+
+## 🔨 Kompilasi & Pengujian Lokal
+
+```bash
+npx hardhat compile
+npx hardhat test
+```
+
+---
+
+## 🚀 Deploy ke Polygon Amoy (Testnet)
+
+Gunakan Hardhat Ignition untuk melakukan deploy:
+
+```bash
+npx hardhat ignition deploy ignition/modules/identityZKP.js --network polygonAmoy
+```
+
+> ⚠️ Catatan: Jika ingin deploy ulang, hapus folder `ignition/deployments/` terlebih dahulu.
+
+---
+
+## 🔍 Verifikasi Kontrak
+
+### ✅ Verifikasi Kontrak Verifier Saja
+
+```bash
+npx hardhat verify --network polygonAmoy alamat-kontrak-Groth16Verifier
+```
+
+### ✅ Verifikasi IdentityZKP (dengan argumen address Verifier)
+
+```bash
+npx hardhat verify --network polygonAmoy alamat-kontrak-IdentityZKP "alamat-kontrak-verifier"
+```
+Note: Sesuaikan addressnya dengan address yang sudah kamu deploy sebelumnya.
+
+---
+
+## 🌐 Eksplorasi di Testnet
+
+Lihat kontrak yang telah dideploy di Polygon Amoy:
+[https://amoy.polygonscan.com/](https://amoy.polygonscan.com/)
+
+---
+
+## 📂 Struktur Proyek
+
+```
+contracts/
+  ├── IdentityVerifier.sol     # Diexport dari snarkjs (verifier)
+  └── IdentityZKP.sol          # Kontrak utama (menggunakan verifier)
+
+ignition/modules/
+  └── identityZKP.js           # Module deploy menggunakan Ignition
+```
+
+---
