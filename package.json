@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "setup": "node setup.js",
+    "prove": "node prove.js",
+    "verify": "node verify.js",
+    "build": "npm run setup",
+    "rebuild": "rm -rf build && npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
