@@ -1,6 +1,8 @@
 # Build artifacts
 build/
-contracts/
+artifacts/
+cache/
+ignition/deployments/
 
 # Compiled circuit outputs
 *.r1cs
@@ -15,7 +17,7 @@ public.json
 witness.wtns
 verification_key.json
 
-# Input (optional, jika data sensitif)
+# Input
 input.json
 
 # Node dependencies
@@ -24,3 +26,6 @@ node_modules/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Environment
+.env

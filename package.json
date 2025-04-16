@@ -18,5 +18,12 @@
     "circomlibjs": "^0.1.7",
     "ffjavascript": "^0.3.1",
     "snarkjs": "^0.7.5"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ignition": "^0.15.11",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.13",
+    "dotenv": "^16.5.0",
+    "hardhat": "^2.23.0"
   }
 }
