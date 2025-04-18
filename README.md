@@ -144,6 +144,10 @@ npx hardhat verify --network polygonAmoy alamat-kontrak-IdentityZKP "alamat-kont
 ```
 Note: Sesuaikan addressnya dengan address yang sudah kamu deploy sebelumnya.
 
+Alamat Kontrak Terbaru:
+IdentityModule#Groth16Verifier - 0x34EE74C8FD0Eb8aeDA39b91fB66c6600a61cb9Cb
+IdentityModule#IdentityZKP - 0x0a5Ae258F23E8Ce4816a40BA81796ceD47b293Ca
+
 ---
 
 ## 🌐 Eksplorasi di Testnet

@@ -40,27 +40,11 @@ describe("IdentityZKP", function () {
     const c = [proof.pi_c[0], proof.pi_c[1]];
     const input = publicSignals;
 
-    console.log("Submitting proof to contract:");
-    console.log("a:", a);
-    console.log("b:", b);
-    console.log("c:", c);
-    console.log("input:", input);
-
-    // Listen for the DebugEvent
-    const debugPromise = new Promise((resolve) => {
-      identityZkp.on("DebugEvent", (message, result) => {
-        console.log(`Debug: ${message} - Result: ${result}`);
-        resolve(result);
-      });
-    });
+    const userId = ethers.keccak256(ethers.toUtf8Bytes("User1")); 
 
     // Submit proof
-    const tx = await identityZkp.connect(user).submitProof(a, b, c, input);
+    const tx = await identityZkp.connect(user).submitProof(userId, a, b, c, input);
     const receipt = await tx.wait();
-
-    // Wait for debug event
-    const debugResult = await debugPromise;
-    console.log("Verification result from event:", debugResult);
 
     // Check if verification succeeded
     const verifiedEvent = receipt.logs.find(
@@ -70,7 +54,7 @@ describe("IdentityZKP", function () {
     expect(verifiedEvent).to.not.be.undefined;
 
     // Assert user is verified
-    const status = await identityZkp.isUserVerified(user.address);
+    const status = await identityZkp.isVerified(userId);
     expect(status).to.equal(true);
   });
 });
