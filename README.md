@@ -126,6 +126,9 @@ npx hardhat ignition deploy ignition/modules/identityZKP.js --network polygonAmo
 ```
 
 > ⚠️ Catatan: Jika ingin deploy ulang, hapus folder `ignition/deployments/` terlebih dahulu.
+```bash
+rm -rf ignition/deployments/
+```
 
 ---
 
@@ -135,18 +138,20 @@ npx hardhat ignition deploy ignition/modules/identityZKP.js --network polygonAmo
 
 ```bash
 npx hardhat verify --network polygonAmoy alamat-kontrak-Groth16Verifier
+npx hardhat verify --network polygonAmoy 0x54EbbDF1542b1c77fed3334BD786e2CBEb285488
 ```
 
 ### ✅ Verifikasi IdentityZKP (dengan argumen address Verifier)
 
 ```bash
 npx hardhat verify --network polygonAmoy alamat-kontrak-IdentityZKP "alamat-kontrak-verifier"
+npx hardhat verify --network polygonAmoy 0xbF20f1Ab4Fc6941C6DE02FA55c675044298Aa503 "0x54EbbDF1542b1c77fed3334BD786e2CBEb285488"
 ```
 Note: Sesuaikan addressnya dengan address yang sudah kamu deploy sebelumnya.
 
 Alamat Kontrak Terbaru:
-IdentityModule#Groth16Verifier - 0x34EE74C8FD0Eb8aeDA39b91fB66c6600a61cb9Cb
-IdentityModule#IdentityZKP - 0x0a5Ae258F23E8Ce4816a40BA81796ceD47b293Ca
+IdentityModule#Groth16Verifier - 0x54EbbDF1542b1c77fed3334BD786e2CBEb285488
+IdentityModule#IdentityZKP - 0xbF20f1Ab4Fc6941C6DE02FA55c675044298Aa503
 
 ---
 
