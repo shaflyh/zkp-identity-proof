@@ -32,8 +32,8 @@ describe("IdentityZKP", function () {
     expect(storedHash).to.equal(fakeHash);
 
     await identityZkp.connect(admin).approveIdentity(userId);
-    const registeredHash = await identityZkp.registeredHash(userId);
-    expect(registeredHash).to.equal(fakeHash);
+    const approved = await identityZkp.isApproved(userId);
+    expect(approved).to.be.true;
   });
 
   it("should verify valid proof and mark user as verified", async () => {
@@ -54,25 +54,19 @@ describe("IdentityZKP", function () {
     const userId = ethers.keccak256(ethers.toUtf8Bytes("User1"));
     const hash = publicSignals[0];
 
-    // 1. User submit hash
     await identityZkp.connect(user).submitHashByUser(userId, hash);
-
-    // 2. Admin approve hash
     await identityZkp.connect(admin).approveIdentity(userId);
 
-    // 3. User submit proof
     const tx = await identityZkp.connect(user).submitProof(userId, a, b, c);
     const receipt = await tx.wait();
 
-    // 4. Check event emitted
     const event = receipt.logs.find(
       (log) => identityZkp.interface.parseLog(log).name === "ProofVerified"
     );
     expect(event).to.not.be.undefined;
 
-    // 5. Check verification status
-    const status = await identityZkp.isVerified(userId);
-    expect(status).to.equal(true);
+    const verified = await identityZkp.isVerified(userId);
+    expect(verified).to.equal(true);
   });
 
   it("should allow admin to change admin", async () => {

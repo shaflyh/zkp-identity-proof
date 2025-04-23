@@ -5,21 +5,18 @@ import "./IdentityVerifier.sol";
 
 contract IdentityZKP {
     Groth16Verifier private verifier;
-
     address public admin;
 
-    mapping(bytes32 => uint256) public submittedHash; // hash yang dikirim user
-    mapping(bytes32 => bool) public hasSubmitted; // status: apakah user pernah submit
-    mapping(bytes32 => bool) public isApproved; // status: apakah hash disetujui admin
-
-    mapping(bytes32 => uint256) public registeredHash; // hash yang disahkan
-    mapping(bytes32 => bool) public isRegistered; // status: sudah terdaftar secara resmi
-    mapping(bytes32 => bool) public isVerified; // status: proof valid
+    mapping(bytes32 => uint256) public submittedHash;
+    mapping(bytes32 => bool) public hasSubmitted;
+    mapping(bytes32 => bool) public isApproved;
+    mapping(bytes32 => bool) public isVerified;
 
     event HashSubmitted(bytes32 indexed userId, uint256 hash);
     event IdentityApproved(bytes32 indexed userId, uint256 hash);
     event ProofVerified(bytes32 indexed userId);
     event AdminChanged(address indexed oldAdmin, address indexed newAdmin);
+    event IdentityRevoked(bytes32 indexed userId, uint8 reason);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only admin can perform this action");
@@ -51,17 +48,13 @@ contract IdentityZKP {
     }
 
     /**
-     * @notice Admin approves submitted hash and registers it for verification
+     * @notice Admin approves submitted hash for verification
      */
     function approveIdentity(bytes32 userId) external onlyAdmin {
         require(hasSubmitted[userId], "Hash not submitted by user");
-
-        uint256 hash = submittedHash[userId];
-        registeredHash[userId] = hash;
-        isRegistered[userId] = true;
         isApproved[userId] = true;
 
-        emit IdentityApproved(userId, hash);
+        emit IdentityApproved(userId, submittedHash[userId]);
     }
 
     /**
@@ -73,15 +66,32 @@ contract IdentityZKP {
         uint[2][2] calldata b,
         uint[2] calldata c
     ) external {
-        require(isRegistered[userId], "Hash not registered");
+        require(isApproved[userId], "Hash not approved");
 
         uint[1] memory input;
-        input[0] = registeredHash[userId];
+        input[0] = submittedHash[userId];
 
         bool result = verifier.verifyProof(a, b, c, input);
         require(result, "Invalid ZK proof");
 
         isVerified[userId] = true;
         emit ProofVerified(userId);
+    }
+
+    /**
+     * @notice Admin revoke approved identity
+     * @param userId The ID of the user whose verification should be revoked
+     * @param reason A code indicating the reason for revocation (optional)
+     */
+    function revokeApprovedIdentity(
+        bytes32 userId,
+        uint8 reason
+    ) external onlyAdmin {
+        require(isApproved[userId], "Identity not approved");
+
+        isApproved[userId] = false;
+        isVerified[userId] = false;
+
+        emit IdentityRevoked(userId, reason);
     }
 }
