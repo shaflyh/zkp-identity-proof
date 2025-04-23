@@ -138,20 +138,20 @@ rm -rf ignition/deployments/
 
 ```bash
 npx hardhat verify --network polygonAmoy alamat-kontrak-Groth16Verifier
-npx hardhat verify --network polygonAmoy 0x54EbbDF1542b1c77fed3334BD786e2CBEb285488
+npx hardhat verify --network polygonAmoy 0x56708DFBAB56AC79709ee05492d9fE469328cb47
 ```
 
 ### ✅ Verifikasi IdentityZKP (dengan argumen address Verifier)
 
 ```bash
 npx hardhat verify --network polygonAmoy alamat-kontrak-IdentityZKP "alamat-kontrak-verifier"
-npx hardhat verify --network polygonAmoy 0xbF20f1Ab4Fc6941C6DE02FA55c675044298Aa503 "0x54EbbDF1542b1c77fed3334BD786e2CBEb285488"
+npx hardhat verify --network polygonAmoy 0x6f0ED47A8cCDE93Db5A23c848eC247A07e662c3E "0x56708DFBAB56AC79709ee05492d9fE469328cb47"
 ```
 Note: Sesuaikan addressnya dengan address yang sudah kamu deploy sebelumnya.
 
 Alamat Kontrak Terbaru:
-IdentityModule#Groth16Verifier - 0x54EbbDF1542b1c77fed3334BD786e2CBEb285488
-IdentityModule#IdentityZKP - 0xbF20f1Ab4Fc6941C6DE02FA55c675044298Aa503
+IdentityModule#Groth16Verifier - 0x56708DFBAB56AC79709ee05492d9fE469328cb47
+IdentityModule#IdentityZKP - 0x6f0ED47A8cCDE93Db5A23c848eC247A07e662c3E
 
 ---
 

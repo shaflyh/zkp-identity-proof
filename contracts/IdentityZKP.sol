@@ -8,11 +8,16 @@ contract IdentityZKP {
 
     address public admin;
 
-    mapping(bytes32 => uint256) public registeredHash;
-    mapping(bytes32 => bool) public isRegistered;
-    mapping(bytes32 => bool) public isVerified;
+    mapping(bytes32 => uint256) public submittedHash; // hash yang dikirim user
+    mapping(bytes32 => bool) public hasSubmitted; // status: apakah user pernah submit
+    mapping(bytes32 => bool) public isApproved; // status: apakah hash disetujui admin
 
-    event HashRegistered(bytes32 indexed userId, uint256 hash);
+    mapping(bytes32 => uint256) public registeredHash; // hash yang disahkan
+    mapping(bytes32 => bool) public isRegistered; // status: sudah terdaftar secara resmi
+    mapping(bytes32 => bool) public isVerified; // status: proof valid
+
+    event HashSubmitted(bytes32 indexed userId, uint256 hash);
+    event IdentityApproved(bytes32 indexed userId, uint256 hash);
     event ProofVerified(bytes32 indexed userId);
     event AdminChanged(address indexed oldAdmin, address indexed newAdmin);
 
@@ -28,7 +33,6 @@ contract IdentityZKP {
 
     /**
      * @notice Change admin to a new address
-     * @param newAdmin The new admin address
      */
     function setAdmin(address newAdmin) external onlyAdmin {
         require(newAdmin != address(0), "Invalid new admin");
@@ -37,22 +41,31 @@ contract IdentityZKP {
     }
 
     /**
-     * @notice Register or update identity hash for a specific userId (only admin)
-     * @param userId An abstract identifier (wallet address, backend user ID, NIK, etc.)
-     * @param hash The identity hash (public signal)
+     * @notice User submits their own identity hash
      */
-    function registerHash(bytes32 userId, uint256 hash) external onlyAdmin {
-        registeredHash[userId] = hash;
-        isRegistered[userId] = true;
-        emit HashRegistered(userId, hash);
+    function submitHashByUser(bytes32 userId, uint256 hash) external {
+        submittedHash[userId] = hash;
+        hasSubmitted[userId] = true;
+
+        emit HashSubmitted(userId, hash);
     }
 
     /**
-     * @notice Submit a zk-SNARK proof to verify possession of identity
-     * @param userId The identifier corresponding to the registered hash
-     * @param a zkSNARK proof component
-     * @param b zkSNARK proof component
-     * @param c zkSNARK proof component
+     * @notice Admin approves submitted hash and registers it for verification
+     */
+    function approveIdentity(bytes32 userId) external onlyAdmin {
+        require(hasSubmitted[userId], "Hash not submitted by user");
+
+        uint256 hash = submittedHash[userId];
+        registeredHash[userId] = hash;
+        isRegistered[userId] = true;
+        isApproved[userId] = true;
+
+        emit IdentityApproved(userId, hash);
+    }
+
+    /**
+     * @notice User submits ZKP proof for their approved identity
      */
     function submitProof(
         bytes32 userId,
