@@ -92,7 +92,7 @@ npm run zkp:verify
 ```
 PRIVATE_KEY=0x...
 POLYGON_AMOY_RPC=https://polygon-amoy.infura.io/v3/your_project_id
-POLYGONSCAN_API_KEY=your_polygonscan_api_key
+POLYGONSCAN_API_KEY=your_POLYGONSCAN_API_KEY
 ```
 📎 Dapatkan API Key Polygon di: [https://polygonscan.com/](https://polygonscan.com/)
 
@@ -130,6 +130,11 @@ Gunakan Hardhat Ignition untuk melakukan deploy:
 npx hardhat ignition deploy ignition/modules/identityZKP.js --network polygonAmoy
 ```
 
+Deploy Mainnet Polygon:
+```bash
+npx hardhat ignition deploy ignition/modules/identityZKP.js --network polygonMainnet
+```
+
 ---
 
 ## 🔍 Verifikasi Kontrak
@@ -137,17 +142,21 @@ npx hardhat ignition deploy ignition/modules/identityZKP.js --network polygonAmo
 ### ✅ Verifikasi Kontrak Verifier Saja
 
 ```bash
-npx hardhat verify --network polygonAmoy alamat-kontrak-Groth16Verifier
-npx hardhat verify --network polygonAmoy 0xA6867cBdAEe16953673D30d7918b1871C9e8FE81
+npx hardhat verify --network polygonMainnet alamat-kontrak-Groth16Verifier
+npx hardhat verify --network polygonMainnet 0xE2BdD028DE585F80366CD0D4D30A502306FBF5e0
 ```
 
 ### ✅ Verifikasi IdentityZKP (dengan argumen address Verifier)
 
 ```bash
-npx hardhat verify --network polygonAmoy alamat-kontrak-IdentityZKP "alamat-kontrak-verifier"
-npx hardhat verify --network polygonAmoy 0xe6A24597f07888CFe4371796A787B48DE1fdf5CE "0xA6867cBdAEe16953673D30d7918b1871C9e8FE81"
+npx hardhat verify --network polygonMainnet alamat-kontrak-IdentityZKP "alamat-kontrak-verifier"
+npx hardhat verify --network polygonMainnet 0xF99024c6E16c2dCCA305DAF4406b17D93F22a72f "0xE2BdD028DE585F80366CD0D4D30A502306FBF5e0"
 ```
 Note: Sesuaikan addressnya dengan address yang sudah kamu deploy sebelumnya.
+
+Alamat Kontrak Terbaru Mainnet:
+IdentityModule#Groth16Verifier - 0xE2BdD028DE585F80366CD0D4D30A502306FBF5e0
+IdentityModule#IdentityZKP - 0xF99024c6E16c2dCCA305DAF4406b17D93F22a72f
 
 Alamat Kontrak Terbaru:
 IdentityModule#Groth16Verifier - 0xA6867cBdAEe16953673D30d7918b1871C9e8FE81
