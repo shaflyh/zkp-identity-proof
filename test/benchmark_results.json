@@ -1,0 +1,199 @@
+{
+  "raw": {
+    "gasCosts": {
+      "submitHashByUser": [
+        "28939"
+      ],
+      "approveIdentity": [
+        "52419"
+      ],
+      "submitProof": [
+        "250356"
+      ],
+      "revokeApprovedIdentity": [
+        "29290"
+      ]
+    },
+    "transactionTimes": {
+      "submitHashByUser": [
+        8020
+      ],
+      "approveIdentity": [
+        8147
+      ],
+      "submitProof": [
+        8394
+      ],
+      "revokeApprovedIdentity": [
+        10628
+      ]
+    },
+    "gasPrices": [
+      "27574285755",
+      "27580000041",
+      "27731428608",
+      "27731428608"
+    ],
+    "networkLatency": [
+      4270,
+      5101,
+      5780,
+      6235
+    ],
+    "concurrencyResults": {
+      "3": {
+        "gasCosts": {
+          "submitHashByUser": [
+            "28939",
+            "28939",
+            "28939"
+          ],
+          "approveIdentity": [
+            "52419",
+            "52419",
+            "52419"
+          ],
+          "submitProof": [
+            "250356",
+            "250356",
+            "250356"
+          ],
+          "revokeApprovedIdentity": [
+            "29290",
+            "29290",
+            "29290"
+          ]
+        },
+        "transactionTimes": {
+          "submitHashByUser": [
+            7890,
+            9944,
+            7352
+          ],
+          "approveIdentity": [
+            6452,
+            8290,
+            7531
+          ],
+          "submitProof": [
+            6051,
+            9030,
+            5001
+          ],
+          "revokeApprovedIdentity": [
+            6425,
+            5381,
+            5746
+          ]
+        },
+        "errors": [],
+        "totalTime": 101864
+      }
+    },
+    "errors": []
+  },
+  "averages": {
+    "gasCosts": {
+      "submitHashByUser": "28939",
+      "approveIdentity": "52419",
+      "submitProof": "250356",
+      "revokeApprovedIdentity": "29290"
+    },
+    "transactionTimes": {
+      "submitHashByUser": 8020,
+      "approveIdentity": 8147,
+      "submitProof": 8394,
+      "revokeApprovedIdentity": 10628
+    },
+    "gasPrices": "27654285753",
+    "networkLatency": 5346.5,
+    "concurrencyResults": {
+      "3": {
+        "gasCosts": {
+          "submitHashByUser": "28939",
+          "approveIdentity": "52419",
+          "submitProof": "250356",
+          "revokeApprovedIdentity": "29290"
+        },
+        "transactionTimes": {
+          "submitHashByUser": 8395.333333333334,
+          "approveIdentity": 7424.333333333333,
+          "submitProof": 6694,
+          "revokeApprovedIdentity": 5850.666666666667
+        },
+        "throughput": 0.11780413099819367
+      }
+    }
+  },
+  "report": {
+    "summary": {
+      "averageGasCosts": {
+        "submitHashByUser": "28939",
+        "approveIdentity": "52419",
+        "submitProof": "250356",
+        "revokeApprovedIdentity": "29290"
+      },
+      "averageTransactionTimes": {
+        "submitHashByUser": 8020,
+        "approveIdentity": 8147,
+        "submitProof": 8394,
+        "revokeApprovedIdentity": 10628
+      },
+      "averageGasPrice": "27.654285753 gwei",
+      "averageNetworkLatency": "5346.50 ms",
+      "errorRate": "0%"
+    },
+    "concurrencyAnalysis": {
+      "3": {
+        "throughput": "0.1178 tx/s",
+        "averageCostsPerFunction": {
+          "submitHashByUser": "28939",
+          "approveIdentity": "52419",
+          "submitProof": "250356",
+          "revokeApprovedIdentity": "29290"
+        },
+        "averageTimesPerFunction": {
+          "submitHashByUser": "8395.33 ms",
+          "approveIdentity": "7424.33 ms",
+          "submitProof": "6694.00 ms",
+          "revokeApprovedIdentity": "5850.67 ms"
+        }
+      }
+    },
+    "costAnalysis": {
+      "submitHashByUser": {
+        "gasUsed": "28939",
+        "estimatedCostInPOL": "0.000800287375406067 POL",
+        "estimatedCostInGwei": "800287.375406067 gwei"
+      },
+      "approveIdentity": {
+        "gasUsed": "52419",
+        "estimatedCostInPOL": "0.001449610004886507 POL",
+        "estimatedCostInGwei": "1449610.004886507 gwei"
+      },
+      "submitProof": {
+        "gasUsed": "250356",
+        "estimatedCostInPOL": "0.006923416363978068 POL",
+        "estimatedCostInGwei": "6923416.363978068 gwei"
+      },
+      "revokeApprovedIdentity": {
+        "gasUsed": "29290",
+        "estimatedCostInPOL": "0.00080999402970537 POL",
+        "estimatedCostInGwei": "809994.02970537 gwei"
+      }
+    },
+    "recommendations": [
+      "Most expensive operation is 'submitProof' at 250356 gas",
+      "Consider implementing batched proofs if possible to reduce gas costs when submitting multiple proofs",
+      "Monitor network congestion and gas prices to perform identity operations during lower-cost periods"
+    ]
+  },
+  "config": {
+    "contractAddress": "0xF99024c6E16c2dCCA305DAF4406b17D93F22a72f",
+    "iterations": 1,
+    "concurrencyLevels": [
+      3
+    ],
+    "timestamp": "2025-04-28T05:21:21.421Z"
+  }
+}

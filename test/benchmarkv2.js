@@ -11,8 +11,8 @@ const CONFIG = {
   contractAddress: "0xF99024c6E16c2dCCA305DAF4406b17D93F22a72f",
   privateKey: PRIVATE_KEY,
   outputFile: "test/benchmark_results.json",
-  iterations: 3, // Reduced iterations to avoid rate limiting
-  concurrentTests: [1, 3], // Reduced concurrency levels
+  iterations: 1, // Reduced iterations to avoid rate limiting
+  concurrentTests: [3], // Reduced concurrency levels
   retryAttempts: 2, // Number of retry attempts for failed transactions
   retryDelay: 3000, // Delay between retries in ms (increased)
   gasLimit: 3000000, // Fixed gas limit to avoid estimation errors
@@ -177,7 +177,7 @@ async function measureTransaction(functionName, txFunction, extraData = {}) {
     console.log(
       `${functionName} completed: Gas used: ${gasUsed}, Time: ${timeElapsed}ms, Cost: ${ethers.formatEther(
         actualCost
-      )} MATIC`
+      )} POL`
     );
     return {
       receipt,
@@ -257,7 +257,7 @@ async function runTestCase(userId, hash, proof, iteration) {
   );
 }
 
-// Run tests with different concurrency levels
+// Run tests with different concurrency levels - with proper nonce management
 async function runConcurrencyTest(concurrencyLevel) {
   console.log(
     `\n=== Running concurrency test with ${concurrencyLevel} parallel transactions ===`
@@ -265,7 +265,9 @@ async function runConcurrencyTest(concurrencyLevel) {
 
   // Generate test data for this concurrency level
   const testData = generateTestData(concurrencyLevel);
+  const startTime = Date.now();
 
+  // Initialize results for this concurrency level
   results.concurrencyResults[concurrencyLevel] = {
     gasCosts: {
       submitHashByUser: [],
@@ -282,200 +284,198 @@ async function runConcurrencyTest(concurrencyLevel) {
     errors: [],
   };
 
-  const startTime = Date.now();
-
-  // Get current gas price for all transactions
-  const feeData = await provider.getFeeData();
-  const txOptions = {
-    gasLimit: CONFIG.gasLimit,
-  };
-
-  // If maxFeePerGas is available (EIP-1559), use it
-  if (feeData.maxFeePerGas) {
-    txOptions.maxFeePerGas = feeData.maxFeePerGas;
-    txOptions.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
-  } else if (feeData.gasPrice) {
-    // Otherwise fall back to legacy gas price
-    txOptions.gasPrice = feeData.gasPrice;
-  }
-
-  // Run all functions in parallel
-  const parallelPromises = [];
-
-  // 1. Submit hashes in parallel
-  for (let i = 0; i < concurrencyLevel; i++) {
-    parallelPromises.push(
-      (async () => {
-        try {
-          const startTime = Date.now();
-          const tx = await contract.submitHashByUser(
-            testData.userIds[i],
-            testData.hashes[i],
-            txOptions
-          );
-          const receipt = await tx.wait();
-          const endTime = Date.now();
-
-          results.concurrencyResults[
-            concurrencyLevel
-          ].gasCosts.submitHashByUser.push(receipt.gasUsed.toString());
-          results.concurrencyResults[
-            concurrencyLevel
-          ].transactionTimes.submitHashByUser.push(endTime - startTime);
-
-          return receipt;
-        } catch (error) {
-          results.concurrencyResults[concurrencyLevel].errors.push({
-            function: "submitHashByUser",
-            userId: testData.userIds[i],
-            error: error.message,
-          });
-          return null;
-        }
-      })()
-    );
-  }
-
-  await Promise.all(parallelPromises);
+  // 1. Submit hashes in sequence with proper nonce management
   console.log(
-    `Completed ${concurrencyLevel} parallel submitHashByUser transactions`
+    "Running submitHashByUser in sequence with proper nonce management..."
   );
+  const nonce = await provider.getTransactionCount(wallet.address);
 
-  // Add delay between batches
-  await sleep(2000);
-
-  // Clear promises array
-  parallelPromises.length = 0;
-
-  // 2. Approve identities in parallel
   for (let i = 0; i < concurrencyLevel; i++) {
-    parallelPromises.push(
-      (async () => {
-        try {
-          const startTime = Date.now();
-          const tx = await contract.approveIdentity(
-            testData.userIds[i],
-            txOptions
-          );
-          const receipt = await tx.wait();
-          const endTime = Date.now();
+    try {
+      const startTime = Date.now();
+      const txOptions = {
+        gasLimit: CONFIG.gasLimit,
+        nonce: nonce + i,
+      };
 
-          results.concurrencyResults[
-            concurrencyLevel
-          ].gasCosts.approveIdentity.push(receipt.gasUsed.toString());
-          results.concurrencyResults[
-            concurrencyLevel
-          ].transactionTimes.approveIdentity.push(endTime - startTime);
+      const tx = await contract.submitHashByUser(
+        testData.userIds[i],
+        testData.hashes[i],
+        txOptions
+      );
 
-          return receipt;
-        } catch (error) {
-          results.concurrencyResults[concurrencyLevel].errors.push({
-            function: "approveIdentity",
-            userId: testData.userIds[i],
-            error: error.message,
-          });
-          return null;
-        }
-      })()
-    );
+      console.log(
+        `Submitted hash for user ${i + 1}/${concurrencyLevel} with nonce ${
+          nonce + i
+        }`
+      );
+
+      const receipt = await tx.wait();
+      const endTime = Date.now();
+
+      results.concurrencyResults[
+        concurrencyLevel
+      ].gasCosts.submitHashByUser.push(receipt.gasUsed.toString());
+      results.concurrencyResults[
+        concurrencyLevel
+      ].transactionTimes.submitHashByUser.push(endTime - startTime);
+    } catch (error) {
+      console.error(`Error submitting hash for user ${i + 1}:`, error.message);
+      results.concurrencyResults[concurrencyLevel].errors.push({
+        function: "submitHashByUser",
+        userId: testData.userIds[i],
+        error: error.message,
+      });
+    }
   }
 
-  await Promise.all(parallelPromises);
+  // Wait for all transactions to be mined
+  await sleep(5000);
+
+  // 2. Approve identities in sequence with proper nonce management
   console.log(
-    `Completed ${concurrencyLevel} parallel approveIdentity transactions`
+    "\nRunning approveIdentity in sequence with proper nonce management..."
   );
+  const nonceAfterSubmit = await provider.getTransactionCount(wallet.address);
 
-  // Add delay between batches
-  await sleep(2000);
-
-  // Clear promises array
-  parallelPromises.length = 0;
-
-  // 3. Submit proofs in parallel
   for (let i = 0; i < concurrencyLevel; i++) {
-    parallelPromises.push(
-      (async () => {
-        try {
-          const startTime = Date.now();
-          const tx = await contract.submitProof(
-            testData.userIds[i],
-            testData.proofs[i].a,
-            testData.proofs[i].b,
-            testData.proofs[i].c,
-            txOptions
-          );
-          const receipt = await tx.wait();
-          const endTime = Date.now();
+    try {
+      const startTime = Date.now();
+      const txOptions = {
+        gasLimit: CONFIG.gasLimit,
+        nonce: nonceAfterSubmit + i,
+      };
 
-          results.concurrencyResults[
-            concurrencyLevel
-          ].gasCosts.submitProof.push(receipt.gasUsed.toString());
-          results.concurrencyResults[
-            concurrencyLevel
-          ].transactionTimes.submitProof.push(endTime - startTime);
+      const tx = await contract.approveIdentity(testData.userIds[i], txOptions);
 
-          return receipt;
-        } catch (error) {
-          results.concurrencyResults[concurrencyLevel].errors.push({
-            function: "submitProof",
-            userId: testData.userIds[i],
-            error: error.message,
-          });
-          return null;
-        }
-      })()
-    );
+      console.log(
+        `Approved identity for user ${i + 1}/${concurrencyLevel} with nonce ${
+          nonceAfterSubmit + i
+        }`
+      );
+
+      const receipt = await tx.wait();
+      const endTime = Date.now();
+
+      results.concurrencyResults[
+        concurrencyLevel
+      ].gasCosts.approveIdentity.push(receipt.gasUsed.toString());
+      results.concurrencyResults[
+        concurrencyLevel
+      ].transactionTimes.approveIdentity.push(endTime - startTime);
+    } catch (error) {
+      console.error(
+        `Error approving identity for user ${i + 1}:`,
+        error.message
+      );
+      results.concurrencyResults[concurrencyLevel].errors.push({
+        function: "approveIdentity",
+        userId: testData.userIds[i],
+        error: error.message,
+      });
+    }
   }
 
-  await Promise.all(parallelPromises);
+  // Wait for all transactions to be mined
+  await sleep(5000);
+
+  // 3. Submit proofs in sequence with proper nonce management
   console.log(
-    `Completed ${concurrencyLevel} parallel submitProof transactions`
+    "\nRunning submitProof in sequence with proper nonce management..."
   );
+  const nonceAfterApprove = await provider.getTransactionCount(wallet.address);
 
-  // Add delay between batches
-  await sleep(2000);
-
-  // Clear promises array
-  parallelPromises.length = 0;
-
-  // 4. Revoke approved identities in parallel
   for (let i = 0; i < concurrencyLevel; i++) {
-    parallelPromises.push(
-      (async () => {
-        try {
-          const startTime = Date.now();
-          const tx = await contract.revokeApprovedIdentity(
-            testData.userIds[i],
-            1,
-            txOptions
-          );
-          const receipt = await tx.wait();
-          const endTime = Date.now();
+    try {
+      const startTime = Date.now();
+      const txOptions = {
+        gasLimit: CONFIG.gasLimit,
+        nonce: nonceAfterApprove + i,
+      };
 
-          results.concurrencyResults[
-            concurrencyLevel
-          ].gasCosts.revokeApprovedIdentity.push(receipt.gasUsed.toString());
-          results.concurrencyResults[
-            concurrencyLevel
-          ].transactionTimes.revokeApprovedIdentity.push(endTime - startTime);
+      const tx = await contract.submitProof(
+        testData.userIds[i],
+        testData.proofs[i].a,
+        testData.proofs[i].b,
+        testData.proofs[i].c,
+        txOptions
+      );
 
-          return receipt;
-        } catch (error) {
-          results.concurrencyResults[concurrencyLevel].errors.push({
-            function: "revokeApprovedIdentity",
-            userId: testData.userIds[i],
-            error: error.message,
-          });
-          return null;
-        }
-      })()
-    );
+      console.log(
+        `Submitted proof for user ${i + 1}/${concurrencyLevel} with nonce ${
+          nonceAfterApprove + i
+        }`
+      );
+
+      const receipt = await tx.wait();
+      const endTime = Date.now();
+
+      results.concurrencyResults[concurrencyLevel].gasCosts.submitProof.push(
+        receipt.gasUsed.toString()
+      );
+      results.concurrencyResults[
+        concurrencyLevel
+      ].transactionTimes.submitProof.push(endTime - startTime);
+    } catch (error) {
+      console.error(`Error submitting proof for user ${i + 1}:`, error.message);
+      results.concurrencyResults[concurrencyLevel].errors.push({
+        function: "submitProof",
+        userId: testData.userIds[i],
+        error: error.message,
+      });
+    }
   }
 
-  await Promise.all(parallelPromises);
+  // Wait for all transactions to be mined
+  await sleep(5000);
+
+  // 4. Revoke approved identities in sequence with proper nonce management
   console.log(
-    `Completed ${concurrencyLevel} parallel revokeApprovedIdentity transactions`
+    "\nRunning revokeApprovedIdentity in sequence with proper nonce management..."
   );
+  const nonceAfterProof = await provider.getTransactionCount(wallet.address);
+
+  for (let i = 0; i < concurrencyLevel; i++) {
+    try {
+      const startTime = Date.now();
+      const txOptions = {
+        gasLimit: CONFIG.gasLimit,
+        nonce: nonceAfterProof + i,
+      };
+
+      const tx = await contract.revokeApprovedIdentity(
+        testData.userIds[i],
+        1,
+        txOptions
+      );
+
+      console.log(
+        `Revoked identity for user ${i + 1}/${concurrencyLevel} with nonce ${
+          nonceAfterProof + i
+        }`
+      );
+
+      const receipt = await tx.wait();
+      const endTime = Date.now();
+
+      results.concurrencyResults[
+        concurrencyLevel
+      ].gasCosts.revokeApprovedIdentity.push(receipt.gasUsed.toString());
+      results.concurrencyResults[
+        concurrencyLevel
+      ].transactionTimes.revokeApprovedIdentity.push(endTime - startTime);
+    } catch (error) {
+      console.error(
+        `Error revoking identity for user ${i + 1}:`,
+        error.message
+      );
+      results.concurrencyResults[concurrencyLevel].errors.push({
+        function: "revokeApprovedIdentity",
+        userId: testData.userIds[i],
+        error: error.message,
+      });
+    }
+  }
 
   const endTime = Date.now();
   results.concurrencyResults[concurrencyLevel].totalTime = endTime - startTime;
@@ -621,7 +621,7 @@ function generateDetailedReport(averages) {
     }
   }
 
-  // Calculate MATIC costs based on average gas price
+  // Calculate POL costs based on average gas price
   for (const [func, gas] of Object.entries(averages.gasCosts)) {
     if (gas !== "N/A") {
       const gasBigInt = BigInt(gas);
@@ -630,7 +630,7 @@ function generateDetailedReport(averages) {
 
       report.costAnalysis[func] = {
         gasUsed: gas,
-        estimatedCostInMatic: `${ethers.formatEther(totalWei)} MATIC`,
+        estimatedCostInPOL: `${ethers.formatEther(totalWei)} POL`,
         estimatedCostInGwei: `${ethers.formatUnits(totalWei, "gwei")} gwei`,
       };
     }
@@ -705,14 +705,6 @@ function generateDetailedReport(averages) {
     }
   }
 
-  // Add ZKP-specific recommendations
-  report.recommendations.push(
-    "Consider implementing batched proofs if possible to reduce gas costs when submitting multiple proofs"
-  );
-  report.recommendations.push(
-    "Monitor network congestion and gas prices to perform identity operations during lower-cost periods"
-  );
-
   return report;
 }
 
@@ -737,7 +729,7 @@ async function runBenchmarks() {
       await sleep(3000);
     }
 
-    // Then, run concurrency tests
+    // Then, run concurrency tests with proper nonce management
     for (const concurrencyLevel of CONFIG.concurrentTests) {
       await runConcurrencyTest(concurrencyLevel);
 
