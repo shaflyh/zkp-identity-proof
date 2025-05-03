@@ -1,4 +1,3 @@
-
 # 🛡️ ZKP Identity Proof
 
 Proyek ini menggunakan **Zero Knowledge Proof (ZKP)** untuk membuktikan bahwa seorang pengguna mengetahui data identitas (seperti NIK, Nama, TTL) yang cocok dengan hash identitas yang telah diverifikasi — tanpa harus memperlihatkan data aslinya.
@@ -19,7 +18,8 @@ scripts/
   ├── setup.js            // Setup trusted key dan kompilasi circuit
   ├── generate_input.js   // Membuat file input.json dengan hash identitas
   ├── generate_proof.js   // Menghasilkan witness & proof
-  └── verify_proof.js     // Verifikasi proof secara lokal
+  ├── verify_proof.js     // Verifikasi proof secara lokal
+  └── merkle-tree.js      // Utilitas untuk Merkle Tree (experimental)
 contracts/                // Verifier Solidity (hasil export snarkjs)
 input.json                // Input data pengguna (NIK, nama, TTL)
 ```
@@ -181,5 +181,20 @@ contracts/
 ignition/modules/
   └── identityZKP.js           # Module deploy menggunakan Ignition
 ```
+
+---
+## 🌿 Merkle Tree Implementation (Experimental)
+
+⚠️ Fitur ini masih dalam tahap eksperimental dan belum sepenuhnya diuji atau di-deploy.
+
+Implementasi terbaru menggunakan Merkle Tree untuk mengelola set identitas yang diapprove dan direvoke secara efisien:
+
+- `IdentityZKPWithMerkle.sol` - Kontrak dengan dukungan Merkle Tree
+- `scripts/merkle-tree.js` - Utilitas untuk membuat dan mengelola Merkle Tree
+
+Keuntungan Merkle Tree:
+- Validasi batch yang efisien
+- Manajemen daftar identitas lebih terukur (scalable)
+- Pengurangan biaya gas untuk operasi mass approval/revocation
 
 ---
