@@ -117,7 +117,7 @@ npx hardhat test
 
 ---
 
-## 🚀 Deploy ke Polygon Amoy (Testnet)
+## 🚀 Deploy ke Polygon
 
 > Jika ingin deploy ulang, hapus folder `ignition/deployments/` terlebih dahulu.
 ```bash
@@ -135,6 +135,13 @@ Deploy Mainnet Polygon:
 npx hardhat ignition deploy ignition/modules/identityZKP.js --network polygonMainnet
 ```
 
+Deploy Mainnet Polygon:
+```bash
+npx hardhat ignition deploy ignition/modules/IdentityMerkleZKP.js --network polygonMainnet
+```
+IdentityMerkleZKPModule#Groth16Verifier - 0xfCC4762B60d64a992dfF7b18A59717Ac818e1C54
+IdentityMerkleZKPModule#IdentityMerkleZKP - 0xE26aEE358266a10258860Fc862cceC2e2CAf50dc
+
 ---
 
 ## 🔍 Verifikasi Kontrak
@@ -144,6 +151,7 @@ npx hardhat ignition deploy ignition/modules/identityZKP.js --network polygonMai
 ```bash
 npx hardhat verify --network polygonMainnet alamat-kontrak-Groth16Verifier
 npx hardhat verify --network polygonMainnet 0xE2BdD028DE585F80366CD0D4D30A502306FBF5e0
+npx hardhat verify --network polygonMainnet 0xfCC4762B60d64a992dfF7b18A59717Ac818e1C54
 ```
 
 ### ✅ Verifikasi IdentityZKP (dengan argumen address Verifier)
@@ -151,6 +159,7 @@ npx hardhat verify --network polygonMainnet 0xE2BdD028DE585F80366CD0D4D30A502306
 ```bash
 npx hardhat verify --network polygonMainnet alamat-kontrak-IdentityZKP "alamat-kontrak-verifier"
 npx hardhat verify --network polygonMainnet 0xF99024c6E16c2dCCA305DAF4406b17D93F22a72f "0xE2BdD028DE585F80366CD0D4D30A502306FBF5e0"
+npx hardhat verify --network polygonMainnet 0xE26aEE358266a10258860Fc862cceC2e2CAf50dc "0xfCC4762B60d64a992dfF7b18A59717Ac818e1C54" "0x0000000000000000000000000000000000000000000000000000000000000000"
 ```
 Note: Sesuaikan addressnya dengan address yang sudah kamu deploy sebelumnya.
 

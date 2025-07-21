@@ -75,13 +75,13 @@ const results = {
     submitHashByUser: [],
     approveIdentity: [],
     submitProof: [],
-    revokeApprovedIdentity: [],
+    // revokeApprovedIdentity: [],
   },
   transactionTimes: {
     submitHashByUser: [],
     approveIdentity: [],
     submitProof: [],
-    revokeApprovedIdentity: [],
+    // revokeApprovedIdentity: [],
   },
   gasPrices: [],
   networkLatency: [],
@@ -247,14 +247,14 @@ async function runTestCase(userId, hash, proof, iteration) {
   await sleep(1000);
 
   // 4. Revoke approved identity
-  await withRetry(
-    async () =>
-      await measureTransaction(
-        "revokeApprovedIdentity",
-        (options) => contract.revokeApprovedIdentity(userId, 1, options),
-        extraData
-      )
-  );
+  // await withRetry(
+  //   async () =>
+  //     await measureTransaction(
+  //       "revokeApprovedIdentity",
+  //       (options) => contract.revokeApprovedIdentity(userId, 1, options),
+  //       extraData
+  //     )
+  // );
 }
 
 // Run tests with different concurrency levels - with proper nonce management
@@ -273,13 +273,13 @@ async function runConcurrencyTest(concurrencyLevel) {
       submitHashByUser: [],
       approveIdentity: [],
       submitProof: [],
-      revokeApprovedIdentity: [],
+      // revokeApprovedIdentity: [],
     },
     transactionTimes: {
       submitHashByUser: [],
       approveIdentity: [],
       submitProof: [],
-      revokeApprovedIdentity: [],
+      // revokeApprovedIdentity: [],
     },
     errors: [],
   };
@@ -430,52 +430,52 @@ async function runConcurrencyTest(concurrencyLevel) {
   await sleep(5000);
 
   // 4. Revoke approved identities in sequence with proper nonce management
-  console.log(
-    "\nRunning revokeApprovedIdentity in sequence with proper nonce management..."
-  );
-  const nonceAfterProof = await provider.getTransactionCount(wallet.address);
+  // console.log(
+  //   "\nRunning revokeApprovedIdentity in sequence with proper nonce management..."
+  // );
+  // const nonceAfterProof = await provider.getTransactionCount(wallet.address);
 
-  for (let i = 0; i < concurrencyLevel; i++) {
-    try {
-      const startTime = Date.now();
-      const txOptions = {
-        gasLimit: CONFIG.gasLimit,
-        nonce: nonceAfterProof + i,
-      };
+  // for (let i = 0; i < concurrencyLevel; i++) {
+  //   try {
+  //     const startTime = Date.now();
+  //     const txOptions = {
+  //       gasLimit: CONFIG.gasLimit,
+  //       nonce: nonceAfterProof + i,
+  //     };
 
-      const tx = await contract.revokeApprovedIdentity(
-        testData.userIds[i],
-        1,
-        txOptions
-      );
+  //     const tx = await contract.revokeApprovedIdentity(
+  //       testData.userIds[i],
+  //       1,
+  //       txOptions
+  //     );
 
-      console.log(
-        `Revoked identity for user ${i + 1}/${concurrencyLevel} with nonce ${
-          nonceAfterProof + i
-        }`
-      );
+  //     console.log(
+  //       `Revoked identity for user ${i + 1}/${concurrencyLevel} with nonce ${
+  //         nonceAfterProof + i
+  //       }`
+  //     );
 
-      const receipt = await tx.wait();
-      const endTime = Date.now();
+  //     const receipt = await tx.wait();
+  //     const endTime = Date.now();
 
-      results.concurrencyResults[
-        concurrencyLevel
-      ].gasCosts.revokeApprovedIdentity.push(receipt.gasUsed.toString());
-      results.concurrencyResults[
-        concurrencyLevel
-      ].transactionTimes.revokeApprovedIdentity.push(endTime - startTime);
-    } catch (error) {
-      console.error(
-        `Error revoking identity for user ${i + 1}:`,
-        error.message
-      );
-      results.concurrencyResults[concurrencyLevel].errors.push({
-        function: "revokeApprovedIdentity",
-        userId: testData.userIds[i],
-        error: error.message,
-      });
-    }
-  }
+  //     results.concurrencyResults[
+  //       concurrencyLevel
+  //     ].gasCosts.revokeApprovedIdentity.push(receipt.gasUsed.toString());
+  //     results.concurrencyResults[
+  //       concurrencyLevel
+  //     ].transactionTimes.revokeApprovedIdentity.push(endTime - startTime);
+  //   } catch (error) {
+  //     console.error(
+  //       `Error revoking identity for user ${i + 1}:`,
+  //       error.message
+  //     );
+  //     results.concurrencyResults[concurrencyLevel].errors.push({
+  //       function: "revokeApprovedIdentity",
+  //       userId: testData.userIds[i],
+  //       error: error.message,
+  //     });
+  //   }
+  // }
 
   const endTime = Date.now();
   results.concurrencyResults[concurrencyLevel].totalTime = endTime - startTime;

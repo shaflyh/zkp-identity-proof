@@ -11,7 +11,7 @@ describe("IdentityZKP", function () {
   beforeEach(async () => {
     [admin, user, newAdmin] = await ethers.getSigners();
 
-    const VerifierFactory = await ethers.getContractFactory("Groth16Verifier");
+    const VerifierFactory = await ethers.getContractFactory("contracts/IdentityVerifier.sol:Groth16Verifier");
     verifier = await VerifierFactory.connect(admin).deploy();
     await verifier.waitForDeployment();
 
