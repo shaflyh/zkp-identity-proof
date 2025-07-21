@@ -113,6 +113,7 @@ snarkjs groth16 verify build/verification_key.json build/public.json build/proof
 ```bash
 npx hardhat compile
 npx hardhat test
+npx hardhat test test/IdentityMerkleZKP.js
 ```
 
 ---
@@ -142,6 +143,9 @@ npx hardhat ignition deploy ignition/modules/IdentityMerkleZKP.js --network poly
 IdentityMerkleZKPModule#Groth16Verifier - 0xfCC4762B60d64a992dfF7b18A59717Ac818e1C54
 IdentityMerkleZKPModule#IdentityMerkleZKP - 0xE26aEE358266a10258860Fc862cceC2e2CAf50dc
 
+New (remove isVerify):
+IdentityMerkleZKPModule#Groth16Verifier - 0x18dca8Cf44403744aeC8e7085B4fd208EcCC483A
+IdentityMerkleZKPModule#IdentityMerkleZKP - 0x3cA6568F2706E8748ef8f2c396219BC72888fff6
 ---
 
 ## 🔍 Verifikasi Kontrak
@@ -151,7 +155,7 @@ IdentityMerkleZKPModule#IdentityMerkleZKP - 0xE26aEE358266a10258860Fc862cceC2e2C
 ```bash
 npx hardhat verify --network polygonMainnet alamat-kontrak-Groth16Verifier
 npx hardhat verify --network polygonMainnet 0xE2BdD028DE585F80366CD0D4D30A502306FBF5e0
-npx hardhat verify --network polygonMainnet 0xfCC4762B60d64a992dfF7b18A59717Ac818e1C54
+npx hardhat verify --network polygonMainnet 0x18dca8Cf44403744aeC8e7085B4fd208EcCC483A
 ```
 
 ### ✅ Verifikasi IdentityZKP (dengan argumen address Verifier)
@@ -159,7 +163,7 @@ npx hardhat verify --network polygonMainnet 0xfCC4762B60d64a992dfF7b18A59717Ac81
 ```bash
 npx hardhat verify --network polygonMainnet alamat-kontrak-IdentityZKP "alamat-kontrak-verifier"
 npx hardhat verify --network polygonMainnet 0xF99024c6E16c2dCCA305DAF4406b17D93F22a72f "0xE2BdD028DE585F80366CD0D4D30A502306FBF5e0"
-npx hardhat verify --network polygonMainnet 0xE26aEE358266a10258860Fc862cceC2e2CAf50dc "0xfCC4762B60d64a992dfF7b18A59717Ac818e1C54" "0x0000000000000000000000000000000000000000000000000000000000000000"
+npx hardhat verify --network polygonMainnet 0x3cA6568F2706E8748ef8f2c396219BC72888fff6 "0x18dca8Cf44403744aeC8e7085B4fd208EcCC483A" "0x0000000000000000000000000000000000000000000000000000000000000000"
 ```
 Note: Sesuaikan addressnya dengan address yang sudah kamu deploy sebelumnya.
 

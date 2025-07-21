@@ -13,7 +13,9 @@ describe("IdentityMerkleZKP", function () {
     [admin, user1, user2, subAdmin, newAdmin] = await ethers.getSigners();
 
     // Deploy the Groth16Verifier (IdentityMerkleVerifier)
-    const VerifierFactory = await ethers.getContractFactory("contracts/IdentityMerkleVerifier.sol:Groth16Verifier");
+    const VerifierFactory = await ethers.getContractFactory(
+      "contracts/IdentityMerkleVerifier.sol:Groth16Verifier"
+    );
     verifier = await VerifierFactory.connect(admin).deploy();
     await verifier.waitForDeployment();
 
@@ -204,7 +206,7 @@ describe("IdentityMerkleZKP", function () {
       }
     });
 
-    it("should verify valid proof and mark user as verified", async function () {
+    it("should verify valid proof and emit event", async function () {
       // Skip if using mock data (as it won't verify)
       if (!fs.existsSync(path.join(__dirname, "../build/proof.json"))) {
         this.skip();
@@ -223,14 +225,11 @@ describe("IdentityMerkleZKP", function () {
       );
       expect(event).to.not.be.undefined;
 
-      // Check verification status
-      expect(await identityMerkleZkp.isVerified(user1.address)).to.be.true;
-
-      const [verified, userRoot, timestamp] =
-        await identityMerkleZkp.getUserVerificationInfo(user1.address);
-      expect(verified).to.be.true;
-      expect(userRoot).to.equal(merkleRoot);
-      expect(timestamp).to.be.gt(0);
+      // Parse the event to verify it contains correct data
+      const parsedEvent = identityMerkleZkp.interface.parseLog(event);
+      expect(parsedEvent.args.verifier).to.equal(user1.address);
+      expect(parsedEvent.args.merkleRoot).to.equal(merkleRoot);
+      expect(parsedEvent.args.timestamp).to.be.gt(0);
     });
 
     it("should reject verification with invalid root", async () => {
@@ -241,7 +240,7 @@ describe("IdentityMerkleZKP", function () {
       ).to.be.revertedWith("Root not valid or expired");
     });
 
-    it("should reject verification if user already verified", async function () {
+    it("should allow multiple verifications from same user", async function () {
       // Skip if using mock data
       if (!fs.existsSync(path.join(__dirname, "../build/proof.json"))) {
         this.skip();
@@ -249,14 +248,29 @@ describe("IdentityMerkleZKP", function () {
       }
 
       // First verification
-      await identityMerkleZkp
+      const tx1 = await identityMerkleZkp
         .connect(user1)
         .verifyIdentity(a, b, c, merkleRoot);
+      const receipt1 = await tx1.wait();
 
-      // Second verification should fail
-      await expect(
-        identityMerkleZkp.connect(user1).verifyIdentity(a, b, c, merkleRoot)
-      ).to.be.revertedWith("User already verified");
+      // Second verification should succeed (no restrictions)
+      const tx2 = await identityMerkleZkp
+        .connect(user1)
+        .verifyIdentity(a, b, c, merkleRoot);
+      const receipt2 = await tx2.wait();
+
+      // Both should emit events
+      const event1 = receipt1.logs.find(
+        (log) =>
+          identityMerkleZkp.interface.parseLog(log)?.name === "IdentityVerified"
+      );
+      const event2 = receipt2.logs.find(
+        (log) =>
+          identityMerkleZkp.interface.parseLog(log)?.name === "IdentityVerified"
+      );
+
+      expect(event1).to.not.be.undefined;
+      expect(event2).to.not.be.undefined;
     });
   });
 
@@ -278,16 +292,6 @@ describe("IdentityMerkleZKP", function () {
       ).to.be.revertedWith("Already admin");
     });
 
-    it("should allow admin to revoke verification", async () => {
-      // Setup: make user1 verified (mock)
-      // Since we can't easily verify with mock data, we'll test the revert condition
-      await expect(
-        identityMerkleZkp
-          .connect(admin)
-          .revokeVerification(user1.address, "Test revocation")
-      ).to.be.revertedWith("User not verified");
-    });
-
     it("should allow admin to invalidate roots", async () => {
       const newRoot = "0x" + "8".repeat(64);
       await identityMerkleZkp.connect(admin).updateMerkleRoot(newRoot);
@@ -295,6 +299,12 @@ describe("IdentityMerkleZKP", function () {
       // Invalidate old root
       await identityMerkleZkp.connect(admin).invalidateRoot(sampleMerkleRoot);
       expect(await identityMerkleZkp.validRoots(sampleMerkleRoot)).to.be.false;
+    });
+
+    it("should reject invalidating current root", async () => {
+      await expect(
+        identityMerkleZkp.connect(admin).invalidateRoot(sampleMerkleRoot)
+      ).to.be.revertedWith("Cannot invalidate current root");
     });
   });
 
@@ -404,7 +414,9 @@ describe("IdentityMerkleZKP - Time-based tests", function () {
   beforeEach(async () => {
     [admin, user1] = await ethers.getSigners();
 
-    const VerifierFactory = await ethers.getContractFactory("contracts/IdentityMerkleVerifier.sol:Groth16Verifier");
+    const VerifierFactory = await ethers.getContractFactory(
+      "contracts/IdentityMerkleVerifier.sol:Groth16Verifier"
+    );
     const verifier = await VerifierFactory.connect(admin).deploy();
     await verifier.waitForDeployment();
 

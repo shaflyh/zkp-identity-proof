@@ -6,7 +6,7 @@ import "./IdentityMerkleVerifier.sol";
 /**
  * @title IdentityMerkleZKP
  * @dev Smart contract for scalable identity verification using Zero Knowledge Proofs and Merkle Trees
- * @notice This contract allows identity verification without exposing private data while supporting unlimited users
+ * @notice This version allows multiple verifications and is designed for centralized backend usage
  */
 contract IdentityMerkleZKP {
     Groth16Verifier private verifier;
@@ -21,11 +21,6 @@ contract IdentityMerkleZKP {
     address public admin;
     mapping(address => bool) public subAdmins;
 
-    // User verification tracking
-    mapping(address => bool) public isVerified;
-    mapping(address => bytes32) public userMerkleRoot;
-    mapping(address => uint256) public verificationTimestamp;
-
     // Constants
     uint256 public constant ROOT_EXPIRY_TIME = 30 days; // Merkle roots expire after 30 days
     uint256 public constant MAX_BATCH_SIZE = 100; // Maximum batch operations
@@ -38,14 +33,13 @@ contract IdentityMerkleZKP {
         uint256 timestamp
     );
     event IdentityVerified(
-        address indexed user,
+        address indexed verifier,
         bytes32 indexed merkleRoot,
         uint256 timestamp
     );
     event SubAdminAdded(address indexed subAdmin);
     event SubAdminRemoved(address indexed subAdmin);
     event AdminChanged(address indexed oldAdmin, address indexed newAdmin);
-    event VerificationRevoked(address indexed user, string reason);
     event RootExpired(bytes32 indexed root, uint256 expiredAt);
 
     modifier onlyAdmin() {
@@ -117,7 +111,7 @@ contract IdentityMerkleZKP {
 
     /**
      * @notice Verify user identity using ZKP and Merkle inclusion proof
-     * @dev User must provide valid ZKP proof that includes Merkle inclusion
+     * @dev Anyone can verify multiple times - no restrictions
      * @param a ZKP proof component a
      * @param b ZKP proof component b
      * @param c ZKP proof component c
@@ -129,7 +123,7 @@ contract IdentityMerkleZKP {
         uint[2] calldata c,
         bytes32 merkleRoot
     ) external validMerkleRoot(merkleRoot) returns (bool) {
-        require(!isVerified[msg.sender], "User already verified");
+        // No verification restrictions - users can verify multiple times
 
         // Prepare public input for verifier (only merkleRoot)
         uint[1] memory input;
@@ -139,12 +133,9 @@ contract IdentityMerkleZKP {
         bool result = verifier.verifyProof(a, b, c, input);
         require(result, "Invalid ZK proof");
 
-        // Update user verification status
-        isVerified[msg.sender] = true;
-        userMerkleRoot[msg.sender] = merkleRoot;
-        verificationTimestamp[msg.sender] = block.timestamp;
-
+        // Emit event for tracking (backend can listen to this)
         emit IdentityVerified(msg.sender, merkleRoot, block.timestamp);
+
         return true;
     }
 
@@ -214,24 +205,6 @@ contract IdentityMerkleZKP {
     }
 
     /**
-     * @notice Revoke user verification (emergency function)
-     * @param user User address to revoke
-     * @param reason Reason for revocation
-     */
-    function revokeVerification(
-        address user,
-        string calldata reason
-    ) external onlyAdmin {
-        require(isVerified[user], "User not verified");
-
-        isVerified[user] = false;
-        delete userMerkleRoot[user];
-        delete verificationTimestamp[user];
-
-        emit VerificationRevoked(user, reason);
-    }
-
-    /**
      * @notice Invalidate old Merkle root (security function)
      * @param oldRoot Root to invalidate
      */
@@ -272,27 +245,6 @@ contract IdentityMerkleZKP {
         return
             validRoots[root] &&
             block.timestamp <= rootTimestamp[root] + ROOT_EXPIRY_TIME;
-    }
-
-    /**
-     * @notice Get comprehensive user verification information
-     * @param user User address to query
-     * @return verified Whether user is verified
-     * @return merkleRoot The Merkle root used for verification
-     * @return timestamp When verification occurred
-     */
-    function getUserVerificationInfo(
-        address user
-    )
-        external
-        view
-        returns (bool verified, bytes32 merkleRoot, uint256 timestamp)
-    {
-        return (
-            isVerified[user],
-            userMerkleRoot[user],
-            verificationTimestamp[user]
-        );
     }
 
     /**
