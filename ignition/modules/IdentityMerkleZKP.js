@@ -6,12 +6,8 @@ module.exports = buildModule("IdentityMerkleZKPModule", (m) => {
     "contracts/IdentityMerkleVerifier.sol:Groth16Verifier"
   );
 
-  // Then deploy the identity Merkle ZKP contract with the verifier address and initial root
-  // Using bytes32(0) as initial root since it's optional and can be set later
-  const identityMerkleZkp = m.contract("IdentityMerkleZKP", [
-    verifier,
-    "0x0000000000000000000000000000000000000000000000000000000000000000", // bytes32(0) as initial root
-  ]);
+  // Then deploy the identity Merkle ZKP contract with the verifier address
+  const identityMerkleZkp = m.contract("IdentityMerkleZKP", [verifier]);
 
   return { verifier, identityMerkleZkp };
 });

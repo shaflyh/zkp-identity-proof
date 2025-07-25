@@ -5,190 +5,155 @@ import "./IdentityMerkleVerifier.sol";
 
 /**
  * @title IdentityMerkleZKP
- * @dev Smart contract for scalable identity verification using Zero Knowledge Proofs and Merkle Trees
- * @notice This version allows multiple verifications and is designed for centralized backend usage
+ * @dev Simplified smart contract for identity verification using ZKP and Merkle Trees
+ * @notice This version includes individual identity tracking for direct status checks
  */
 contract IdentityMerkleZKP {
     Groth16Verifier private verifier;
 
-    // Merkle tree management
+    // Essential Merkle tree management
     bytes32 public currentMerkleRoot;
-    mapping(bytes32 => bool) public validRoots;
-    mapping(bytes32 => uint256) public rootTimestamp;
-    uint256 public rootNonce;
+
+    // Individual identity tracking
+    mapping(bytes32 => bool) public approvedIdentities;
+    mapping(bytes32 => uint256) public identityApprovalBlock;
+    uint256 public totalApprovedIdentities;
 
     // Administration
     address public admin;
-    mapping(address => bool) public subAdmins;
-
-    // Constants
-    uint256 public constant ROOT_EXPIRY_TIME = 30 days; // Merkle roots expire after 30 days
-    uint256 public constant MAX_BATCH_SIZE = 100; // Maximum batch operations
 
     // Events
-    event MerkleRootUpdated(
-        bytes32 indexed oldRoot,
-        bytes32 indexed newRoot,
-        uint256 nonce,
-        uint256 timestamp
-    );
+    event MerkleRootUpdated(bytes32 indexed oldRoot, bytes32 indexed newRoot);
+    event IdentityApproved(bytes32 indexed identityHash);
+    event IdentityRevoked(bytes32 indexed identityHash);
     event IdentityVerified(
         address indexed verifier,
-        bytes32 indexed merkleRoot,
-        uint256 timestamp
+        bytes32 indexed identityHash
     );
-    event SubAdminAdded(address indexed subAdmin);
-    event SubAdminRemoved(address indexed subAdmin);
     event AdminChanged(address indexed oldAdmin, address indexed newAdmin);
-    event RootExpired(bytes32 indexed root, uint256 expiredAt);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only admin can perform this action");
         _;
     }
 
-    modifier onlyAdminOrSubAdmin() {
-        require(
-            msg.sender == admin || subAdmins[msg.sender],
-            "Only admin or sub-admin can perform this action"
-        );
-        _;
-    }
-
-    modifier validMerkleRoot(bytes32 root) {
-        require(root != bytes32(0), "Invalid root hash");
-        require(validRoots[root], "Root not valid or expired");
-        require(
-            block.timestamp <= rootTimestamp[root] + ROOT_EXPIRY_TIME,
-            "Root has expired"
-        );
-        _;
-    }
-
     /**
-     * @dev Constructor sets up the verifier and initial admin
+     * @dev Constructor sets up the verifier and admin
      * @param _verifier Address of the Groth16Verifier contract
-     * @param _initialRoot Initial Merkle root (optional, can be bytes32(0))
      */
-    constructor(address _verifier, bytes32 _initialRoot) {
+    constructor(address _verifier) {
         require(_verifier != address(0), "Invalid verifier address");
-
         verifier = Groth16Verifier(_verifier);
         admin = msg.sender;
-
-        // Set initial root if provided
-        if (_initialRoot != bytes32(0)) {
-            currentMerkleRoot = _initialRoot;
-            validRoots[_initialRoot] = true;
-            rootTimestamp[_initialRoot] = block.timestamp;
-
-            emit MerkleRootUpdated(
-                bytes32(0),
-                _initialRoot,
-                0,
-                block.timestamp
-            );
-        }
     }
 
     /**
-     * @notice Update Merkle root with batch of new approved identities
-     * @dev Only admin or sub-admin can update the root
+     * @notice Update Merkle root and approve multiple identities
+     * @dev This combines root update with identity approval for gas efficiency
+     * @param newRoot New Merkle root hash
+     * @param identityHashes Array of identity hashes to approve
+     */
+    function updateMerkleRootWithIdentities(
+        bytes32 newRoot,
+        bytes32[] calldata identityHashes
+    ) external onlyAdmin {
+        require(newRoot != bytes32(0), "Invalid root hash");
+        require(identityHashes.length > 0, "Empty identities array");
+        require(identityHashes.length <= 100, "Too many identities"); // Gas limit protection
+
+        // Update Merkle root
+        bytes32 oldRoot = currentMerkleRoot;
+        currentMerkleRoot = newRoot;
+
+        // Approve identities
+        for (uint256 i = 0; i < identityHashes.length; i++) {
+            bytes32 identityHash = identityHashes[i];
+            require(identityHash != bytes32(0), "Invalid identity hash");
+
+            if (!approvedIdentities[identityHash]) {
+                approvedIdentities[identityHash] = true;
+                identityApprovalBlock[identityHash] = block.number;
+                totalApprovedIdentities++;
+                emit IdentityApproved(identityHash);
+            }
+        }
+
+        emit MerkleRootUpdated(oldRoot, newRoot);
+    }
+
+    /**
+     * @notice Update only the Merkle root without approving new identities
+     * @dev Use this when updating tree structure without new approvals
      * @param newRoot New Merkle root hash
      */
-    function updateMerkleRoot(bytes32 newRoot) external onlyAdminOrSubAdmin {
+    function updateMerkleRoot(bytes32 newRoot) external onlyAdmin {
         require(newRoot != bytes32(0), "Invalid root hash");
         require(newRoot != currentMerkleRoot, "Root already current");
 
         bytes32 oldRoot = currentMerkleRoot;
         currentMerkleRoot = newRoot;
-        validRoots[newRoot] = true;
-        rootTimestamp[newRoot] = block.timestamp;
-        rootNonce++;
 
-        emit MerkleRootUpdated(oldRoot, newRoot, rootNonce, block.timestamp);
+        emit MerkleRootUpdated(oldRoot, newRoot);
     }
 
     /**
-     * @notice Verify user identity using ZKP and Merkle inclusion proof
+     * @notice Verify identity using ZKP and Merkle inclusion proof
      * @dev Anyone can verify multiple times - no restrictions
      * @param a ZKP proof component a
      * @param b ZKP proof component b
      * @param c ZKP proof component c
-     * @param merkleRoot The Merkle root that user is proving inclusion in
+     * @param identityHash The identity hash being verified (for event emission)
      */
     function verifyIdentity(
         uint[2] calldata a,
         uint[2][2] calldata b,
         uint[2] calldata c,
-        bytes32 merkleRoot
-    ) external validMerkleRoot(merkleRoot) returns (bool) {
-        // No verification restrictions - users can verify multiple times
+        bytes32 identityHash
+    ) external returns (bool) {
+        require(currentMerkleRoot != bytes32(0), "No Merkle root set");
 
         // Prepare public input for verifier (only merkleRoot)
         uint[1] memory input;
-        input[0] = uint256(merkleRoot);
+        input[0] = uint256(currentMerkleRoot);
 
         // Verify the ZKP proof
         bool result = verifier.verifyProof(a, b, c, input);
         require(result, "Invalid ZK proof");
 
-        // Emit event for tracking (backend can listen to this)
-        emit IdentityVerified(msg.sender, merkleRoot, block.timestamp);
+        // Emit event for tracking
+        emit IdentityVerified(msg.sender, identityHash);
 
         return true;
     }
 
     /**
-     * @notice Batch update multiple Merkle roots for migration or multiple approvals
-     * @dev Useful for migrating from old roots or handling multiple approval batches
-     * @param roots Array of new valid roots
+     * @notice Approve a single identity without updating Merkle root
+     * @dev Use this for individual approvals outside of batch updates
+     * @param identityHash Identity hash to approve
      */
-    function batchUpdateRoots(bytes32[] calldata roots) external onlyAdmin {
-        require(roots.length > 0, "Empty roots array");
-        require(roots.length <= MAX_BATCH_SIZE, "Batch size exceeds limit");
+    function approveIdentity(bytes32 identityHash) external onlyAdmin {
+        require(identityHash != bytes32(0), "Invalid identity hash");
+        require(!approvedIdentities[identityHash], "Already approved");
 
-        for (uint i = 0; i < roots.length; i++) {
-            require(roots[i] != bytes32(0), "Invalid root in batch");
-            validRoots[roots[i]] = true;
-            rootTimestamp[roots[i]] = block.timestamp;
-        }
+        approvedIdentities[identityHash] = true;
+        identityApprovalBlock[identityHash] = block.number;
+        totalApprovedIdentities++;
 
-        // Set the last root as current
-        bytes32 oldRoot = currentMerkleRoot;
-        currentMerkleRoot = roots[roots.length - 1];
-        rootNonce++;
-
-        emit MerkleRootUpdated(
-            oldRoot,
-            currentMerkleRoot,
-            rootNonce,
-            block.timestamp
-        );
+        emit IdentityApproved(identityHash);
     }
 
     /**
-     * @notice Add sub-administrator with limited permissions
-     * @param subAdmin Address to add as sub-admin
+     * @notice Revoke an approved identity
+     * @dev This doesn't update the Merkle tree - handle that separately
+     * @param identityHash Identity hash to revoke
      */
-    function addSubAdmin(address subAdmin) external onlyAdmin {
-        require(subAdmin != address(0), "Invalid sub-admin address");
-        require(subAdmin != admin, "Admin cannot be sub-admin");
-        require(!subAdmins[subAdmin], "Already a sub-admin");
+    function revokeIdentity(bytes32 identityHash) external onlyAdmin {
+        require(approvedIdentities[identityHash], "Identity not approved");
 
-        subAdmins[subAdmin] = true;
-        emit SubAdminAdded(subAdmin);
-    }
+        approvedIdentities[identityHash] = false;
+        totalApprovedIdentities--;
 
-    /**
-     * @notice Remove sub-administrator
-     * @param subAdmin Address to remove from sub-admin
-     */
-    function removeSubAdmin(address subAdmin) external onlyAdmin {
-        require(subAdmins[subAdmin], "Not a sub-admin");
-
-        subAdmins[subAdmin] = false;
-        emit SubAdminRemoved(subAdmin);
+        emit IdentityRevoked(identityHash);
     }
 
     /**
@@ -201,93 +166,71 @@ contract IdentityMerkleZKP {
 
         address oldAdmin = admin;
         admin = newAdmin;
+
         emit AdminChanged(oldAdmin, newAdmin);
-    }
-
-    /**
-     * @notice Invalidate old Merkle root (security function)
-     * @param oldRoot Root to invalidate
-     */
-    function invalidateRoot(bytes32 oldRoot) external onlyAdmin {
-        require(validRoots[oldRoot], "Root not valid");
-        require(oldRoot != currentMerkleRoot, "Cannot invalidate current root");
-
-        validRoots[oldRoot] = false;
-        emit RootExpired(oldRoot, block.timestamp);
-    }
-
-    /**
-     * @notice Clean up expired roots (maintenance function)
-     * @param roots Array of potentially expired roots to check and clean
-     */
-    function cleanupExpiredRoots(bytes32[] calldata roots) external {
-        for (uint i = 0; i < roots.length && i < MAX_BATCH_SIZE; i++) {
-            bytes32 root = roots[i];
-            if (
-                validRoots[root] &&
-                block.timestamp > rootTimestamp[root] + ROOT_EXPIRY_TIME &&
-                root != currentMerkleRoot
-            ) {
-                validRoots[root] = false;
-                emit RootExpired(root, block.timestamp);
-            }
-        }
     }
 
     // ==================== VIEW FUNCTIONS ====================
 
     /**
-     * @notice Check if a root is valid and not expired
-     * @param root Root to check
-     * @return bool True if root is valid and not expired
+     * @notice Check if an identity is approved
+     * @param identityHash Identity hash to check
+     * @return bool True if identity is approved
      */
-    function isValidRoot(bytes32 root) external view returns (bool) {
-        return
-            validRoots[root] &&
-            block.timestamp <= rootTimestamp[root] + ROOT_EXPIRY_TIME;
+    function isIdentityApproved(
+        bytes32 identityHash
+    ) external view returns (bool) {
+        return approvedIdentities[identityHash];
     }
 
     /**
-     * @notice Check if address is sub-admin
-     * @param account Address to check
-     * @return bool True if address is sub-admin
+     * @notice Get approval details for an identity
+     * @param identityHash Identity hash to query
+     * @return approved Whether identity is approved
+     * @return approvalBlock Block number when approved (0 if never approved)
      */
-    function isSubAdmin(address account) external view returns (bool) {
-        return subAdmins[account];
-    }
-
-    /**
-     * @notice Get root information
-     * @param root Root to query
-     * @return isValid Whether root is valid
-     * @return timestamp When root was created
-     * @return isExpired Whether root has expired
-     */
-    function getRootInfo(
-        bytes32 root
-    ) external view returns (bool isValid, uint256 timestamp, bool isExpired) {
+    function getIdentityInfo(
+        bytes32 identityHash
+    ) external view returns (bool approved, uint256 approvalBlock) {
         return (
-            validRoots[root],
-            rootTimestamp[root],
-            block.timestamp > rootTimestamp[root] + ROOT_EXPIRY_TIME
+            approvedIdentities[identityHash],
+            identityApprovalBlock[identityHash]
         );
     }
 
     /**
      * @notice Get contract statistics
-     * @return currentRoot Current Merkle root
-     * @return totalRootUpdates Total number of root updates
+     * @return merkleRoot Current Merkle root
+     * @return totalIdentities Total number of approved identities
      * @return contractAdmin Admin address
      */
     function getContractInfo()
         external
         view
         returns (
-            bytes32 currentRoot,
-            uint256 totalRootUpdates,
+            bytes32 merkleRoot,
+            uint256 totalIdentities,
             address contractAdmin
         )
     {
-        return (currentMerkleRoot, rootNonce, admin);
+        return (currentMerkleRoot, totalApprovedIdentities, admin);
+    }
+
+    /**
+     * @notice Compute identity hash off-chain helper
+     * @dev This is a pure function to help compute identity hashes
+     * @param nik National Identity Number
+     * @param nama Name (as bytes32)
+     * @param ttl Date of birth (as number)
+     * @param key Secret key (as bytes32)
+     * @return The keccak256 hash of the identity data
+     */
+    function computeIdentityHash(
+        uint256 nik,
+        bytes32 nama,
+        uint256 ttl,
+        bytes32 key
+    ) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(nik, nama, ttl, key));
     }
 }
