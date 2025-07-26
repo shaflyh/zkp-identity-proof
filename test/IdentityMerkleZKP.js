@@ -218,10 +218,10 @@ describe("IdentityMerkleZKP", function () {
       // Load proof files if they exist, otherwise use mock data
       try {
         proof = JSON.parse(
-          fs.readFileSync(path.join(__dirname, "../build/proof.json"))
+          fs.readFileSync(path.join(__dirname, "../build/proof_merkle.json"))
         );
         publicSignals = JSON.parse(
-          fs.readFileSync(path.join(__dirname, "../build/public.json"))
+          fs.readFileSync(path.join(__dirname, "../build/public_merkle.json"))
         );
 
         a = [proof.pi_a[0], proof.pi_a[1]];

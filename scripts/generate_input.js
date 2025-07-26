@@ -22,7 +22,7 @@ async function generateInputJson() {
     identityHash: hash.toString(),
   };
 
-  fs.writeFileSync("input.json", JSON.stringify(inputObject, null, 2));
+  fs.writeFileSync("input_zkp.json", JSON.stringify(inputObject, null, 2));
   console.log("✅ input.json generated successfully:");
   console.log(inputObject);
 }

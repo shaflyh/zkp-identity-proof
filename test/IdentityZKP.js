@@ -38,10 +38,10 @@ describe("IdentityZKP", function () {
 
   it("should verify valid proof and mark user as verified", async () => {
     const proof = JSON.parse(
-      fs.readFileSync(path.join(__dirname, "../build/proof.json"))
+      fs.readFileSync(path.join(__dirname, "../build/proof_zkp.json"))
     );
     const publicSignals = JSON.parse(
-      fs.readFileSync(path.join(__dirname, "../build/public.json"))
+      fs.readFileSync(path.join(__dirname, "../build/public_zkp.json"))
     );
 
     const a = [proof.pi_a[0], proof.pi_a[1]];
