@@ -198,20 +198,3 @@ contracts/
 ignition/modules/
   └── identityZKP.js           # Module deploy menggunakan Ignition
 ```
-
----
-## 🌿 Merkle Tree Implementation (Experimental)
-
-⚠️ Fitur ini masih dalam tahap eksperimental dan belum sepenuhnya diuji atau di-deploy.
-
-Implementasi terbaru menggunakan Merkle Tree untuk mengelola set identitas yang diapprove dan direvoke secara efisien:
-
-- `IdentityZKPWithMerkle.sol` - Kontrak dengan dukungan Merkle Tree
-- `scripts/merkle-tree.js` - Utilitas untuk membuat dan mengelola Merkle Tree
-
-Keuntungan Merkle Tree:
-- Validasi batch yang efisien
-- Manajemen daftar identitas lebih terukur (scalable)
-- Pengurangan biaya gas untuk operasi mass approval/revocation
-
----
