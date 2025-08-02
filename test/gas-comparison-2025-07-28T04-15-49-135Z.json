@@ -1,0 +1,25 @@
+{
+  "identityZKP": {
+    "submitHash": "68739",
+    "approveIdentity": "52419",
+    "approve10Identities": "524130",
+    "submitProof": "250368",
+    "revokeIdentity": "29012",
+    "changeAdmin": "28929"
+  },
+  "identityMerkleZKP": {
+    "updateRootWithIdentity": "117406",
+    "approveSingleIdentity": "75230",
+    "updateRootOnly": "48032",
+    "batchApprove10": "540091",
+    "verifyIdentity": "226526",
+    "verify3Times": "679578",
+    "revokeIdentity": "28743",
+    "changeAdmin": "29091"
+  },
+  "deployment": {
+    "verifier": "385245",
+    "identityZKP": "1115938",
+    "identityMerkleZKP": "1699836"
+  }
+}

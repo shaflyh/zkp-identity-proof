@@ -1,0 +1,74 @@
+{
+  "timestamp": "2025-07-28T04:14:44.067Z",
+  "gasPrice": "25.000000124 gwei",
+  "polPrice": 3921,
+  "usedMockProofs": true,
+  "completeWorkflow": {
+    "singleIdentity": {
+      "identityZKP": {
+        "submitGas": "68667",
+        "approveGas": "52419",
+        "verifyGas": "250000",
+        "totalGas": "371086",
+        "costIDR": "36.38"
+      },
+      "identityMerkleZKP": {
+        "approveGas": "75206",
+        "rootUpdateGas": "0",
+        "verifyGas": "250000",
+        "totalGas": "325206",
+        "costIDR": "31.88"
+      },
+      "efficiency": {
+        "gasSavings": "45880",
+        "percentSavings": "12.0%",
+        "costSavingsIDR": "4.50"
+      }
+    },
+    "multiple_5": {
+      "identityZKP": {
+        "totalGas": "1855430",
+        "costIDR": "181.88"
+      },
+      "identityMerkleZKP": {
+        "totalGas": "1500000",
+        "costIDR": "147.04"
+      },
+      "efficiency": {
+        "gasSavings": "355430",
+        "percentSavings": "19.0%",
+        "costSavingsIDR": "34.84"
+      }
+    },
+    "multiple_10": {
+      "identityZKP": {
+        "totalGas": "3710860",
+        "costIDR": "363.76"
+      },
+      "identityMerkleZKP": {
+        "totalGas": "2750000",
+        "costIDR": "269.57"
+      },
+      "efficiency": {
+        "gasSavings": "960860",
+        "percentSavings": "25.0%",
+        "costSavingsIDR": "94.19"
+      }
+    },
+    "multiple_25": {
+      "identityZKP": {
+        "totalGas": "9277150",
+        "costIDR": "909.39"
+      },
+      "identityMerkleZKP": {
+        "totalGas": "6500000",
+        "costIDR": "637.16"
+      },
+      "efficiency": {
+        "gasSavings": "2777150",
+        "percentSavings": "29.0%",
+        "costSavingsIDR": "272.23"
+      }
+    }
+  }
+}
