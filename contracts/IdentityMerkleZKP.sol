@@ -6,13 +6,14 @@ import "./IdentityMerkleVerifier.sol";
 /**
  * @title IdentityMerkleZKP
  * @dev Simplified smart contract for identity verification using ZKP and Merkle Trees
- * @notice This version includes individual identity tracking for direct status checks
+ * @notice This version includes individual identity tracking for direct status checks and IPFS integration
  */
 contract IdentityMerkleZKP {
     Groth16Verifier private verifier;
 
     // Essential Merkle tree management
     bytes32 public currentMerkleRoot;
+    string public currentTreeDataIPFS;
 
     // Individual identity tracking
     mapping(bytes32 => bool) public approvedIdentities;
@@ -31,6 +32,7 @@ contract IdentityMerkleZKP {
         bytes32 indexed identityHash
     );
     event AdminChanged(address indexed oldAdmin, address indexed newAdmin);
+    event TreeDataUpdated(bytes32 indexed merkleRoot, string ipfsHash);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only admin can perform this action");
@@ -48,22 +50,28 @@ contract IdentityMerkleZKP {
     }
 
     /**
-     * @notice Update Merkle root and approve multiple identities
+     * @notice Update Merkle root and approve multiple identities with IPFS backup
      * @dev This combines root update with identity approval for gas efficiency
      * @param newRoot New Merkle root hash
      * @param identityHashes Array of identity hashes to approve
+     * @param ipfsHash IPFS hash containing complete tree data backup
      */
     function updateMerkleRootWithIdentities(
         bytes32 newRoot,
-        bytes32[] calldata identityHashes
+        bytes32[] calldata identityHashes,
+        string calldata ipfsHash
     ) external onlyAdmin {
         require(newRoot != bytes32(0), "Invalid root hash");
         require(identityHashes.length > 0, "Empty identities array");
         require(identityHashes.length <= 100, "Too many identities"); // Gas limit protection
+        require(bytes(ipfsHash).length > 0, "Empty IPFS hash"); // IPFS validation
 
         // Update Merkle root
         bytes32 oldRoot = currentMerkleRoot;
         currentMerkleRoot = newRoot;
+
+        // Store IPFS hash
+        currentTreeDataIPFS = ipfsHash;
 
         // Approve identities
         for (uint256 i = 0; i < identityHashes.length; i++) {
@@ -79,21 +87,31 @@ contract IdentityMerkleZKP {
         }
 
         emit MerkleRootUpdated(oldRoot, newRoot);
+        emit TreeDataUpdated(newRoot, ipfsHash);
     }
 
     /**
      * @notice Update only the Merkle root without approving new identities
      * @dev Use this when updating tree structure without new approvals
      * @param newRoot New Merkle root hash
+     * @param ipfsHash IPFS hash containing updated tree data
      */
-    function updateMerkleRoot(bytes32 newRoot) external onlyAdmin {
+    function updateMerkleRoot(
+        bytes32 newRoot,
+        string calldata ipfsHash
+    ) external onlyAdmin {
         require(newRoot != bytes32(0), "Invalid root hash");
         require(newRoot != currentMerkleRoot, "Root already current");
+        require(bytes(ipfsHash).length > 0, "Empty IPFS hash");
 
         bytes32 oldRoot = currentMerkleRoot;
         currentMerkleRoot = newRoot;
 
+        // Store IPFS hash
+        currentTreeDataIPFS = ipfsHash;
+
         emit MerkleRootUpdated(oldRoot, newRoot);
+        emit TreeDataUpdated(newRoot, ipfsHash);
     }
 
     /**
@@ -214,6 +232,14 @@ contract IdentityMerkleZKP {
         )
     {
         return (currentMerkleRoot, totalApprovedIdentities, admin);
+    }
+
+    /**
+     * Get current IPFS hash containing tree data
+     * @return ipfsHash Current IPFS hash for tree data backup
+     */
+    function getCurrentTreeDataIPFS() external view returns (string memory) {
+        return currentTreeDataIPFS;
     }
 
     /**
